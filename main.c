@@ -1,13 +1,11 @@
 //SPDX-License-Identifier: BSD-3-Clause
 //SPDX-FileCopyrightText: 2020 Lorenzo Cauli (lorecast162)
 
-#ifdef NXDK
 //XBOX Defines
 #include <hal/debug.h>
 #include <hal/video.h>
 #include <hal/xbox.h>
 #include <windows.h>
-#endif
 //SDL Defines
 #include <SDL.h>
 #include <SDL_image.h>
@@ -38,18 +36,14 @@ void game(void){
 	}
 
 	//create window
-	window = SDL_CreateWindow("rsbs-xboxen", 
+	window = SDL_CreateWindow("rsbsPLUS-xboxen", 
 			SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 
 			SCREEN_WIDTH, SCREEN_HEIGHT,
 			SDL_WINDOW_SHOWN);
 
 	//throw error if window wasn't created
 	if (window == NULL) {
-#ifdef NXDK
 		debugPrint("Window could not be created.\n");
-#else
-		printf("Window could not be created.");
-#endif
 		SDL_VideoQuit();
 		printSDLErrorAndReboot();
 	}
@@ -63,19 +57,12 @@ void game(void){
 		printSDLErrorAndReboot();
 	}
 
-#ifdef NXDK
 	//load up circle textures
 	SDL_Texture* blauTexture = IMG_LoadTexture(renderer, "D:\\res\\blau.bmp");
 	SDL_Texture* rotTexture = IMG_LoadTexture(renderer, "D:\\res\\rot.bmp");
 	SDL_Texture* gruenTexture = IMG_LoadTexture(renderer, "D:\\res\\gruen.bmp");
 	//load bg texture
 	SDL_Texture* bgTexture = IMG_LoadTexture(renderer,   "D:\\res\\bg.bmp");
-#else
-	SDL_Texture* blauTexture = IMG_LoadTexture(renderer, "./res/blau.bmp");
-	SDL_Texture* rotTexture = IMG_LoadTexture(renderer, "./res/rot.bmp");
-	SDL_Texture* gruenTexture = IMG_LoadTexture(renderer, "./res/gruen.bmp");
-	SDL_Texture* bgTexture = IMG_LoadTexture(renderer,   "./res/bg.bmp");
-#endif
 
 	//create rects for circles and the screen. used in rendering
 	SDL_Rect sRect = {256,176,128,128};
@@ -83,11 +70,7 @@ void game(void){
 
 
 	//log how many joysticks were found
-#ifdef NXDK
 	debugPrint("%i joysticks were found.\n\n", SDL_NumJoysticks() );
-#else
-	printf("%i joysticks were found.\n\n", SDL_NumJoysticks() );
-#endif
 
 	//create joystick and open joystick 0
 	SDL_GameController* joystick;
@@ -106,10 +89,8 @@ void game(void){
 		if (SDL_GetTicks() < 1000 / FPS) {
 			SDL_Delay((1000 / FPS) - SDL_GetTicks());
 		}
-#ifdef NXDK
 		//wait for vblank
 		XVideoWaitForVBlank();
-#endif
 		//event loop
 		while (SDL_PollEvent(&event)) {
 			//check event type
@@ -119,13 +100,12 @@ void game(void){
 					break;
 			}
 		}
-		const uint8_t* state = SDL_GetKeyboardState(NULL);
 		
 		//if right is pressed and resulting x is not out of the screen make circle go right 
-		if (state[SDL_SCANCODE_RIGHT] || SDL_GameControllerGetButton(joystick, SDL_CONTROLLER_BUTTON_DPAD_RIGHT) && (sRect.x + moveDelta <= SCREEN_WIDTH - 128 ) ) sRect.x += moveDelta;
+		if (SDL_GameControllerGetButton(joystick, SDL_CONTROLLER_BUTTON_DPAD_RIGHT) && (sRect.x + moveDelta <= SCREEN_WIDTH - 128 ) ) sRect.x += moveDelta;
 		
 		//if left is set and resulting x is not out of the screen make circle go left
-		else if (state[SDL_SCANCODE_LEFT] || SDL_GameControllerGetButton(joystick, SDL_CONTROLLER_BUTTON_DPAD_LEFT) && (sRect.x > 0) ) sRect.x -= moveDelta;
+		else if (SDL_GameControllerGetButton(joystick, SDL_CONTROLLER_BUTTON_DPAD_LEFT) && (sRect.x > 0) ) sRect.x -= moveDelta;
 
 		//if up is pressed set to blue
 		if (SDL_GameControllerGetButton(joystick, SDL_CONTROLLER_BUTTON_DPAD_UP)) curCircle = blauTexture;
@@ -150,16 +130,13 @@ void game(void){
 }
 
 int main() {
-#ifdef NXDK
 	//set video mode 
 	XVideoSetMode(SCREEN_WIDTH,SCREEN_HEIGHT,32,REFRESH_DEFAULT);
-#endif
 	game();
 	return 0;
 }
 
 //functions for error reporting
-#ifdef NXDK
 static void printSDLErrorAndReboot(void) {
 	debugPrint("SDL_Error: %s\n", SDL_GetError());
 	debugPrint("Rebooting in 5 seconds.\n");
@@ -173,21 +150,3 @@ static void printIMGErrorAndReboot(void) {
 	Sleep(5000);
 	XReboot();
 }
-
-#else
-static void printSDLErrorAndReboot(void) {
-	printf("SDL_Error: %s\n", SDL_GetError());
-	printf("Rebooting in 5 seconds.\n");
-	IMG_Quit();
-	SDL_Quit();
-}
-
-static void printIMGErrorAndReboot(void) {
-	printf("SDL_Image Error: %s\n", IMG_GetError());
-	printf("Rebooting in 5 seconds.\n");
-	IMG_Quit();
-	SDL_Quit();
-}
-
-
-#endif
